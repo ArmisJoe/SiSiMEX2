@@ -80,6 +80,17 @@ void MCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 	switch (packetType)
 	{
+	case PacketType::RequestNegotiation:
+		if (state() == ST_IDLE)
+		{
+
+		}
+		else
+		{
+			
+			wLog << "OnPacketReceived() - PacketType::RequestNegotiation was unexpected.";
+		}
+		break;
 	case PacketType::RegisterMCCAck:
 		if (state() == ST_REGISTERING)
 		{
