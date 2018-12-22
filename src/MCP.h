@@ -37,8 +37,6 @@ private:
 
 	bool queryMCCsForItem(int itemId);
 
-
-
 	uint16_t _requestedItemId;
 	uint16_t _contributedItemId;
 
@@ -48,9 +46,5 @@ private:
 	unsigned int _searchDepth;
 
 	// TODO: Add extra attributes and methods?
-
-	void destroyChildUCP();
-
-	UCPPtr _ucp;
 };
 
