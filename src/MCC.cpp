@@ -127,6 +127,27 @@ bool MCC::negotiationAgreement() const
 	return negotiationFinished();
 }
 
+bool MCC::sendAcceptNegotiation(TCPSocketPtr socket, uint16_t dstID, bool accept, AgentLocation &uccLoc)
+{
+	PacketHeader packetHead;
+	packetHead.packetType = PacketType::ResponseNegotiation;
+	packetHead.srcAgentId = id();
+	packetHead.dstAgentId = dstID;
+
+	PacketResponseNegotiation packetBody;
+	packetBody.acceptNegotiation = accept;
+	packetBody.uccLoc = uccLoc;
+
+	// Serialize
+	OutputMemoryStream stream;
+	packetHead.Write(stream);
+	packetBody.Write(stream);
+
+	socket->SendPacket(stream.GetBufferPtr(), stream.GetSize());
+
+	return false;
+}
+
 bool MCC::registerIntoYellowPages()
 {
 	// Create message header and data

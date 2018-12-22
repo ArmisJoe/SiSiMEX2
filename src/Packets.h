@@ -21,7 +21,7 @@ enum class PacketType
 	// MCP <-> MCC
 	// TODO
 	RequestNegotiation,
-	FinishNegotiation,
+	ResponseNegotiation,
 	
 	// UCP <-> UCC
 	// TODO
@@ -117,9 +117,38 @@ public:
 // MCP <-> MCC
 
 //TODO
+class PacketResponseNegotiation {
+public:
+	bool acceptNegotiation;
+	AgentLocation uccLoc;
+	void Write(OutputMemoryStream &stream) {
+		stream.Write(acceptNegotiation);
+		uccLoc.Write(stream);
+	}
+	void Read(InputMemoryStream &stream) {
+		stream.Read(acceptNegotiation);
+		uccLoc.Read(stream);
+	}
+
+
+};
 
 
 
 // UCP <-> UCC
 
 // TODO
+class PacketRequestItem {
+public:
+	uint16_t _requestedItemId;
+};
+
+class PacketRequestConstraint {
+public:
+	uint16_t _constraintItemId;
+};
+
+class PacketResultConstraint {
+public:
+	bool accepted;
+};
