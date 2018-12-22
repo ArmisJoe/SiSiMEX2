@@ -20,6 +20,13 @@ public:
 	UCP* asUCP() override { return this; }
 	void OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader, InputMemoryStream &stream) override;
 
+	void destroyChildMCP();
+
 	// TODO
+	int agreement = false;
+	uint16_t requestedItemId;
+
+
+	MCPPtr _mcp;
 };
 
