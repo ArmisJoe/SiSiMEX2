@@ -20,9 +20,15 @@ enum class PacketType
 	
 	// MCP <-> MCC
 	// TODO
+	RequestNegotiation,
+	FinishNegotiation,
 	
 	// UCP <-> UCC
 	// TODO
+	RequestItem,
+	RequestConstraint,
+	ResultConstraint,
+	AckConstraint,
 	
 	Last
 };

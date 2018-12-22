@@ -11,8 +11,11 @@ enum State
 	ST_IDLE,
 	
 	// TODO: Other states
+	ST_NEGOTIATING,
+	ST_WAITING,
+	ST_UNREGISTERING,
+	ST_FINISHED,
 
-	ST_FINISHED
 };
 
 MCC::MCC(Node *node, uint16_t contributedItemId, uint16_t constraintItemId) :
@@ -46,8 +49,17 @@ void MCC::update()
 		break;
 
 		// TODO: Handle other states
+	case ST_IDLE:
+		break;
+	case ST_NEGOTIATING:
+		break;
+	case ST_WAITING:
+		break;
+	case ST_UNREGISTERING:
+		break;
 
 	case ST_FINISHED:
+		destroyChildUCC();
 		destroy();
 	}
 }
@@ -143,9 +155,17 @@ void MCC::unregisterFromYellowPages()
 void MCC::createChildUCC()
 {
 	// TODO: Create a unicast contributor
+	if (_ucc != nullptr)
+		destroyChildUCC();
+	_ucc = App->agentContainer->createUCC(node(), contributedItemId(), constraintItemId());
 }
 
 void MCC::destroyChildUCC()
 {
 	// TODO: Destroy the unicast contributor child
+	if (_ucc != nullptr)
+	{
+		_ucc->stop();
+		_ucc.reset();
+	}
 }
