@@ -52,7 +52,7 @@ void MCC::update()
 	case ST_IDLE:
 		break;
 	case ST_NEGOTIATING:
-		if (_ucc != nullptr && _ucc->negotiationfinished()) {
+		if (_ucc != nullptr && _ucc->negotiationfinished() == true) {
 			if (_ucc->negotiationagreement()) {
 				setState(ST_FINISHED);																	////// SISMISMEISIAIE
 			}
@@ -77,6 +77,8 @@ void MCC::stop()
 
 	unregisterFromYellowPages();
 	setState(ST_FINISHED);
+	
+	destroy();
 }
 
 
@@ -151,7 +153,6 @@ bool MCC::sendAcceptNegotiation(TCPSocketPtr socket, uint16_t dstID, bool accept
 	packetBody.acceptNegotiation = accept;
 	packetBody.uccLoc = uccLoc;
 
-	// Serialize
 	OutputMemoryStream stream;
 	packetHead.Write(stream);
 	packetBody.Write(stream);

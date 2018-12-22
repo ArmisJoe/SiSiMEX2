@@ -21,6 +21,7 @@ public:
 
 	// TODO
 	uint16_t constraintItemId;
+	uint16_t contributedItemId;
 	int agreement = -1;
 };
 

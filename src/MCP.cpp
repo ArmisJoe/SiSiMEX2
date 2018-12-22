@@ -61,14 +61,15 @@ void MCP::update()
 	case ST_NEGOTIATING:
 		if (_ucp != nullptr && _ucp->state() == ST_NEGOTIATION_FINISHED) 
 		{
-			if (_ucp->agreement == true) 
+			if (_ucp->agreement == false) 
 			{								 
-				setState(ST_NEGOTIATION_FINISHED);
-			}
-			else if (_ucp->agreement == false) 
-			{
 				setState(ST_ITERATING_OVER_MCCs);
 				_mccRegisterIndex++;
+		
+			}
+			else
+			{
+				setState(ST_NEGOTIATION_FINISHED);
 			}
 		}
 		break;

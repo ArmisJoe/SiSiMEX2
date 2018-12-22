@@ -14,6 +14,8 @@ UCC::UCC(Node *node, uint16_t contributedItemId, uint16_t constraintItemId) :
 	Agent(node)
 {
 	// TODO: Save input parameters
+	this->contributedItemId = contributedItemId;
+	this->constraintItemId = constraintItemId;
 }
 
 UCC::~UCC()
