@@ -141,14 +141,39 @@ public:
 class PacketRequestItem {
 public:
 	uint16_t _requestedItemId;
+	void Write(OutputMemoryStream &stream)
+	{
+		stream.Write(_requestedItemId);
+	}
+	void Read(InputMemoryStream &stream)
+	{
+		stream.Read(_requestedItemId);
+	}
 };
 
 class PacketRequestConstraint {
 public:
 	uint16_t _constraintItemId;
+	void Write(OutputMemoryStream &stream)
+	{
+		stream.Write(_constraintItemId);
+	}
+	void Read(InputMemoryStream &stream)
+	{
+		stream.Read(_constraintItemId);
+	}
+
 };
 
 class PacketResultConstraint {
 public:
 	bool accepted;
+	void Write(OutputMemoryStream &stream)
+	{
+		stream.Write(accepted);
+	}
+	void Read(InputMemoryStream &stream)
+	{
+		stream.Read(accepted);
+	}
 };
