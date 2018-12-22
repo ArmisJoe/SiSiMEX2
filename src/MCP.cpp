@@ -11,7 +11,9 @@ enum State
 	ST_ITERATING_OVER_MCCs,
 
 	// TODO: Other states
-
+	ST_WAITING_ACCEPTANCE,
+	ST_NEGOTIATING,
+	ST_WAIT_RESULT,
 	ST_NEGOTIATION_FINISHED
 };
 
@@ -37,12 +39,26 @@ void MCP::update()
 		setState(ST_REQUESTING_MCCs);
 		break;
 
+	case ST_REQUESTING_MCCs:
+		break;
+
 	case ST_ITERATING_OVER_MCCs:
 		// TODO: Handle this state
 		break;
 
 	// TODO: Handle other states
+	case ST_WAITING_ACCEPTANCE:
+		break;
 
+	case ST_NEGOTIATING:
+		break;
+
+	case ST_WAIT_RESULT:
+		break;
+
+	case ST_NEGOTIATION_FINISHED:
+		destroyChildUCP();
+		break;
 	default:;
 	}
 }
@@ -50,7 +66,7 @@ void MCP::update()
 void MCP::stop()
 {
 	// TODO: Destroy the underlying search hierarchy (UCP->MCP->UCP->...)
-
+	destroyChildUCP();
 	destroy();
 }
 
@@ -92,7 +108,12 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		break;
 
 	// TODO: Handle other packets
+	case PacketType::ResponseNegotiation:
+		if (state() == ST_WAITING_ACCEPTANCE)
+		{
 
+		}
+		break;
 	default:
 		wLog << "OnPacketReceived() - Unexpected PacketType.";
 	}
@@ -105,7 +126,14 @@ bool MCP::negotiationFinished() const
 
 bool MCP::negotiationAgreement() const
 {
-	return false; // TODO: Did the child UCP find a solution?
+	// TODO: Did the child UCP find a solution?
+	return false; 
+	if (_ucp != nullptr) {
+		return _ucp->agreement == true; 
+	}
+	else {
+		return false;
+	}
 }
 
 
@@ -126,4 +154,12 @@ bool MCP::queryMCCsForItem(int itemId)
 
 	// 1) Ask YP for MCC hosting the item 'itemId'
 	return sendPacketToYellowPages(stream);
+}
+
+void MCP::destroyChildUCP()
+{
+	if (_ucp != nullptr) {
+		_ucp->stop();
+		_ucp.reset();
+	}
 }
