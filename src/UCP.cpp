@@ -18,6 +18,10 @@ UCP::UCP(Node *node, uint16_t requestedItemId, uint16_t contributedItemId, const
 	Agent(node)
 {
 	// TODO: Save input parameters
+	this->requestedItemId = requestedItemId;
+	this->contributedItemId = contributedItemId;
+	this->uccLocation = uccLocation;
+	this->searchDepth = searchDepth;
 }
 
 UCP::~UCP()
@@ -65,6 +69,31 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	{
 		// TODO: Handle packets
 	case PacketType::RequestConstraint:
+		PacketRequestConstraint packetbody;
+		packetbody.Read(stream);
+		if (packetbody._constraintItemId == this->contributedItemId) {
+			agreement = true;
+	
+			setState(ST_SEND_CONSTRAINT);
+
+			ConstraintResolve(true);
+		}
+		else {
+			if (searchDepth >= MAX_SEARCH_DEPTH) {
+				agreement = false;
+
+				setState(ST_SEND_CONSTRAINT);
+
+				ConstraintResolve(true);
+			}
+			else {
+				//we create a child mcp
+				if (_mcp != nullptr)
+					destroyChildMCP();
+				_mcp = App->agentContainer->createMCP(node(), packetbody._constraintItemId, contributedItemId, searchDepth);
+				setState(ST_FINISH_CONSTRAINT);
+			}
+		}
 		break;
 
 	case PacketType::AckConstraint:
@@ -81,4 +110,20 @@ void UCP::destroyChildMCP()
 		_mcp->stop();
 		_mcp.reset();
 	}
+}
+
+bool UCP::ConstraintResolve(bool accepted)
+{
+	PacketHeader packethead;
+	packethead.packetType = PacketType::ResultConstraint;
+	packethead.dstAgentId = uccLocation.agentId;
+	packethead.srcAgentId = this->id();
+
+	PacketResultConstraint body;
+	body.accepted = accepted;
+	OutputMemoryStream stream;
+	packethead.Write(stream);
+	body.Write(stream);
+
+	return sendPacketToAgent(uccLocation.hostIP, uccLocation.hostPort, stream);
 }

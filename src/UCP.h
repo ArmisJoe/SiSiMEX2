@@ -22,11 +22,14 @@ public:
 
 	void destroyChildMCP();
 
+	bool ConstraintResolve(bool outcome);
+
 	// TODO
 	int agreement = false;
 	uint16_t requestedItemId;
-
-
+	uint16_t contributedItemId;
+	AgentLocation uccLocation;
+	unsigned int searchDepth;
 	MCPPtr _mcp;
 };
 
