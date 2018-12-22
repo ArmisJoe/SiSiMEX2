@@ -16,6 +16,9 @@ public:
 	UCC* asUCC() override { return this; }
 	void OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader, InputMemoryStream &stream) override;
 
+	bool negotiationfinished() { return state() == ST_FINISH_NEGOTIATION; }
+	bool negotiationagreement() { return (state() == ST_FINISH_NEGOTIATION && agreement == true); }
+
 	// TODO
 	uint16_t constraintItemId;
 	int agreement = -1;

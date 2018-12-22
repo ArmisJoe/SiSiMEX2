@@ -52,6 +52,12 @@ void MCC::update()
 	case ST_IDLE:
 		break;
 	case ST_NEGOTIATING:
+		if (_ucc != nullptr && _ucc->negotiationfinished()) {
+			if (_ucc->negotiationagreement()) {
+				setState(ST_FINISHED);																	////// SISMISMEISIAIE
+			}
+			destroyChildUCC();
+		}
 		break;
 	case ST_WAITING:
 		break;

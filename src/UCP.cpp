@@ -30,18 +30,47 @@ UCP::~UCP()
 
 void UCP::update()
 {
+	OutputMemoryStream stream;
+
 	switch (state())
 	{
 		// TODO: Handle states
 	case ST_INIT:
 		agreement = -1;
 		// we will be requesting right away
+		// --------------------
+		PacketHeader packethead;
+		packethead.packetType = PacketType::RequestItem;
+		packethead.dstAgentId = uccLocation.agentId;
+		packethead.srcAgentId = this->id();
+
+		PacketRequestItem body;
+		body._requestedItemId = this->requestedItemId;
+		
+		packethead.Write(stream);
+		body.Write(stream);
+
+		sendPacketToAgent(uccLocation.hostIP, uccLocation.hostPort, stream);
+		// -----------------
+		setState(ST_ITEM_REQUESTED);
 		break;
 
 	case ST_ITEM_REQUESTED:
 		break;
 
 	case ST_FINISH_CONSTRAINT:
+		if (_mcp->negotiationFinished()) {
+			if (_mcp->negotiationAgreement()) {
+				ConstraintResolve(true);
+				agreement = true;
+				
+			}
+			else {
+				ConstraintResolve(false);
+				agreement = false;
+			}
+			setState(ST_SEND_CONSTRAINT);
+		}
 		break;
 
 	case ST_SEND_CONSTRAINT:
@@ -97,6 +126,9 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		break;
 
 	case PacketType::AckConstraint:
+		if (state() == ST_SEND_CONSTRAINT) {
+			setState(ST_NEGOTIATION_FINISHED);
+		}
 		break;
 
 	default:
