@@ -33,6 +33,8 @@ public:
 	// It returns the search depth of this MCP
 	unsigned int searchDepth() const { return _searchDepth; }
 
+	bool AskNegotiation(AgentLocation &mcc);
+
 private:
 
 	bool queryMCCsForItem(int itemId);
@@ -52,5 +54,6 @@ private:
 	void destroyChildUCP();
 
 	UCPPtr _ucp;
+	void createChildUCP(AgentLocation &ucc);
 };
 

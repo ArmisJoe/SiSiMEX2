@@ -44,6 +44,14 @@ void MCP::update()
 
 	case ST_ITERATING_OVER_MCCs:
 		// TODO: Handle this state
+		if (_mccRegisterIndex < _mccRegisters.size()) {
+			AskNegotiation(_mccRegisters[_mccRegisterIndex]);
+			setState(ST_WAITING_ACCEPTANCE);
+		}
+		else {
+			setState(ST_NEGOTIATION_FINISHED);
+			_mccRegisterIndex = 0;
+		}
 		break;
 
 	// TODO: Handle other states
@@ -111,7 +119,17 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	case PacketType::ResponseNegotiation:
 		if (state() == ST_WAITING_ACCEPTANCE)
 		{
-
+			PacketResponseNegotiation packetBody;
+			packetBody.Read(stream);
+			if (packetBody.acceptNegotiation == true) {
+				iLog << "MCP::Accepted Negotiation";
+				createChildUCP(packetBody.uccLoc);
+				setState(ST_NEGOTIATING);
+			}
+			else {
+				setState(ST_ITERATING_OVER_MCCs);
+				_mccRegisterIndex++;
+			}
 		}
 		break;
 	default:
@@ -136,6 +154,19 @@ bool MCP::negotiationAgreement() const
 	}
 }
 
+
+bool MCP::AskNegotiation(AgentLocation & mcc)
+{
+	PacketHeader packetHeader;
+	packetHeader.packetType = PacketType::RequestNegotiation;
+	packetHeader.dstAgentId = mcc.agentId;
+	packetHeader.srcAgentId = this->id();
+
+	OutputMemoryStream stream;
+	packetHeader.Write(stream);
+
+	return sendPacketToAgent(mcc.hostIP, mcc.hostPort, stream);
+}
 
 bool MCP::queryMCCsForItem(int itemId)
 {
@@ -162,4 +193,11 @@ void MCP::destroyChildUCP()
 		_ucp->stop();
 		_ucp.reset();
 	}
+}
+
+void MCP::createChildUCP(AgentLocation & ucc)
+{
+	if (_ucp != nullptr)
+		destroyChildUCP();
+	_ucp = App->agentContainer->createUCP(node(), requestedItemId(), contributedItemId(), ucc, searchDepth() + 1);
 }
