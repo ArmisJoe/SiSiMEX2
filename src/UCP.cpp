@@ -5,7 +5,8 @@
 
 
 // TODO: Make an enum with the states
-enum State {
+enum State 
+{
 	ST_INIT,
 	ST_ITEM_REQUESTED,
 	ST_FINISH_CONSTRAINT,
@@ -20,7 +21,7 @@ UCP::UCP(Node *node, uint16_t requestedItemId, uint16_t contributedItemId, const
 	// TODO: Save input parameters
 	this->requestedItemId = requestedItemId;
 	this->contributedItemId = contributedItemId;
-	this->uccLocation = uccLocation;
+	this->Loc = uccLocation;
 	this->searchDepth = searchDepth;
 }
 
@@ -37,35 +38,34 @@ bool UCP::negotiationFinished()
 void UCP::update()
 {
 	OutputMemoryStream stream;
-	PacketHeader packethead;
+	PacketHeader packetHeader;
 
 	PacketRequestItem body;
 	switch (state())
 	{
 		// TODO: Handle states
 	case ST_INIT:
+		setState(ST_ITEM_REQUESTED);
 		agreement = -1;
 		// we will be requesting right away
-		// --------------------
 	
-		packethead.packetType = PacketType::RequestItem;
-		packethead.dstAgentId = uccLocation.agentId;
-		packethead.srcAgentId = this->id();
+		packetHeader.packetType = PacketType::RequestItem;
+		packetHeader.dstAgentId = Loc.agentId;
+		packetHeader.srcAgentId = id();
 
-		body._requestedItemId = this->requestedItemId;
+		body._requestedItemId = requestedItemId;
 		
-		packethead.Write(stream);
+		packetHeader.Write(stream);
 		body.Write(stream);
 
-		sendPacketToAgent(uccLocation.hostIP, uccLocation.hostPort, stream);
-		// -----------------
-		setState(ST_ITEM_REQUESTED);
+		sendPacketToAgent(Loc.hostIP, Loc.hostPort, stream);
+		
 		break;
 
 	case ST_FINISH_CONSTRAINT:
-		if (_mcp->negotiationFinished()) 
+		if (mcp->negotiationFinished()) 
 		{
-			if (_mcp->negotiationAgreement()) 
+			if (mcp->negotiationAgreement()) 
 			{
 				ConstraintResolve(true);
 				agreement = true;
@@ -100,9 +100,9 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	{
 		// TODO: Handle packets
 	case PacketType::RequestConstraint:
-		PacketRequestConstraint packetbody;
-		packetbody.Read(stream);
-		if (packetbody._constraintItemId == this->contributedItemId)
+		PacketRequestConstraint packetReqCon;
+		packetReqCon.Read(stream);
+		if (packetReqCon._constraintItemId == this->contributedItemId)
 		{
 			agreement = true;
 	
@@ -120,12 +120,13 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 				ConstraintResolve(true);
 			}
 			else 
-			{
-				//we create a child mcp
-				if (_mcp != nullptr)
-					destroyChildMCP();
-				_mcp = App->agentContainer->createMCP(node(), packetbody._constraintItemId, contributedItemId, searchDepth);
+			{	
 				setState(ST_FINISH_CONSTRAINT);
+				//we create a child mcp
+				if (mcp != nullptr)
+					destroyChildMCP();
+				mcp = App->agentContainer->createMCP(node(), packetReqCon._constraintItemId, contributedItemId, searchDepth);
+			
 			}
 		}
 		break;
@@ -144,25 +145,24 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 void UCP::destroyChildMCP()
 {
-	if (_mcp != nullptr) 
-	{
-		_mcp->stop();
-		_mcp.reset();
-	}
+	if (mcp == nullptr)
+		return;
+		mcp->stop();
+		mcp.reset();
+	
 }
 
 bool UCP::ConstraintResolve(bool accepted)
 {
-	PacketHeader packethead;
-	packethead.packetType = PacketType::ResultConstraint;
-	packethead.dstAgentId = uccLocation.agentId;
-	packethead.srcAgentId = this->id();
+	PacketHeader packetHeader;
+	packetHeader.packetType = PacketType::ResultConstraint;
+	packetHeader.dstAgentId = Loc.agentId;
+	packetHeader.srcAgentId = this->id();
 
-	PacketResultConstraint body;
-	body.accepted = accepted;
+	PacketResultConstraint packetResCon;
+	packetResCon.accepted = accepted;
 	OutputMemoryStream stream;
-	packethead.Write(stream);
-	body.Write(stream);
-
-	return sendPacketToAgent(uccLocation.hostIP, uccLocation.hostPort, stream);
+	packetHeader.Write(stream);
+	packetResCon.Write(stream);
+	return sendPacketToAgent(Loc.hostIP, Loc.hostPort, stream);
 }

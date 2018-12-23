@@ -30,8 +30,8 @@ public:
 	int agreement = false;
 	uint16_t requestedItemId;
 	uint16_t contributedItemId;
-	AgentLocation uccLocation;
+	AgentLocation Loc;
 	unsigned int searchDepth;
-	MCPPtr _mcp;
+	MCPPtr mcp;
 };
 

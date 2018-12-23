@@ -38,17 +38,17 @@ void UCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 		if (state() == ST_ITEM_REQUEST)
 		{
-			PacketRequestItem packetBody;
-			packetBody.Read(stream);
+			PacketRequestItem packetRequest;
+			packetRequest.Read(stream);
 			PacketHeader _packetHeader;
 			_packetHeader.srcAgentId = id();
 			_packetHeader.dstAgentId = packetHeader.srcAgentId;
 			_packetHeader.packetType = PacketType::RequestConstraint;
 			OutputMemoryStream _stream;
 			_packetHeader.Write(_stream);
-			PacketRequestConstraint _packetBody;
-			_packetBody._constraintItemId = constraintItemId;
-			_packetBody.Write(_stream);
+			PacketRequestConstraint packetReqCon;
+			packetReqCon._constraintItemId = constraintItemId;
+			packetReqCon.Write(_stream);
 			socket->SendPacket(_stream.GetBufferPtr(), _stream.GetSize());
 			setState(ST_ITEM_CONSTRAINT);
 		}
@@ -60,19 +60,14 @@ void UCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	case PacketType::ResultConstraint:
 		if (state() == ST_ITEM_CONSTRAINT)
 		{
-			PacketResultConstraint packetBody;
-			packetBody.Read(stream);
-			if (packetBody.accepted == true) 
-			{
-				agreement = true;
-			}
-			else {
-				agreement = false;
-			}
+			PacketResultConstraint packetResCon;
+			packetResCon.Read(stream);
+			agreement = (bool)packetResCon.accepted;
 			PacketHeader _packetHeader;
+			_packetHeader.packetType = PacketType::AckConstraint;
 			_packetHeader.srcAgentId = id();
 			_packetHeader.dstAgentId = packetHeader.srcAgentId;
-			_packetHeader.packetType = PacketType::AckConstraint;
+			
 			OutputMemoryStream _stream;
 			_packetHeader.Write(_stream);
 			socket->SendPacket(_stream.GetBufferPtr(), _stream.GetSize());

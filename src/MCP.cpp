@@ -13,8 +13,7 @@ enum State
 	// TODO: Other states
 	ST_WAITING_ACCEPTANCE,
 	ST_NEGOTIATING,
-	ST_WAIT_RESULT,
-	ST_FINISHED
+	ST_NEGOTIATION_FINISHED
 };
 
 MCP::MCP(Node *node, uint16_t requestedItemID, uint16_t contributedItemID, unsigned int searchDepth) :
@@ -43,12 +42,12 @@ void MCP::update()
 		// TODO: Handle this state
 		if (_mccRegisterIndex < _mccRegisters.size()) 
 		{
-			AskNegotiation(_mccRegisters[_mccRegisterIndex]);
 			setState(ST_WAITING_ACCEPTANCE);
+			AskNegotiation(_mccRegisters[_mccRegisterIndex]);
 		}
 		else 
 		{
-			setState(ST_FINISHED);
+			setState(ST_NEGOTIATION_FINISHED);
 			_mccRegisterIndex = 0;
 		}
 		break;
@@ -66,12 +65,12 @@ void MCP::update()
 			}
 			else if (_ucp->agreement == true)
 			{
-				setState(ST_FINISHED);
+				setState(ST_NEGOTIATION_FINISHED);
 			}
 		}
 		break;
 
-	case ST_FINISHED:
+	case ST_NEGOTIATION_FINISHED:
 		destroyChildUCP();
 		break;
 	default:
@@ -105,6 +104,7 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 				uint16_t agentId = mccdata.agentId;
 				const std::string &hostIp = mccdata.hostIP;
 				uint16_t hostPort = mccdata.hostPort;
+				//iLog << " - MCC: " << agentId << " - host: " << hostIp << ":" << hostPort;
 			}
 
 			// Store the returned MCCs from YP
@@ -126,17 +126,20 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	case PacketType::ResponseNegotiation:
 		if (state() == ST_WAITING_ACCEPTANCE)
 		{
-			PacketResponseNegotiation packetBody;
-			packetBody.Read(stream);
-			if (packetBody.acceptNegotiation == true) 
+			PacketResponseNegotiation packetResponse;
+			packetResponse.Read(stream);
+			if (packetResponse.acceptNegotiation == true) 
 			{
-				createChildUCP(packetBody.uccLoc);
 				setState(ST_NEGOTIATING);
+				createChildUCP(packetResponse.uccLoc);
+			
 			}
 			else 
 			{
 				setState(ST_ITERATING_OVER_MCCs);
 				_mccRegisterIndex++;
+			
+				
 			}
 		}
 		break;
@@ -147,7 +150,7 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 bool MCP::negotiationFinished() const
 {
-	return state() == ST_FINISHED;
+	return state() == ST_NEGOTIATION_FINISHED;
 }
 
 bool MCP::negotiationAgreement() const
@@ -155,13 +158,9 @@ bool MCP::negotiationAgreement() const
 	// TODO: Did the child UCP find a solution?
 	//return false; 
 	if (_ucp != nullptr) 
-	{
 		return _ucp->agreement == true; 
-	}
 	else 
-	{
 		return false;
-	}
 }
 
 
@@ -171,10 +170,9 @@ bool MCP::AskNegotiation(AgentLocation & mcc)
 	packetHeader.packetType = PacketType::RequestNegotiation;
 	packetHeader.dstAgentId = mcc.agentId;
 	packetHeader.srcAgentId = this->id();
+   	  OutputMemoryStream stream;
 
-	OutputMemoryStream stream;
 	packetHeader.Write(stream);
-
 	return sendPacketToAgent(mcc.hostIP, mcc.hostPort, stream);
 }
 
@@ -199,11 +197,12 @@ bool MCP::queryMCCsForItem(int itemId)
 
 void MCP::destroyChildUCP()
 {
-	if (_ucp != nullptr)
-	{
+	if (_ucp == nullptr)
+		return;
+
 		_ucp->stop();
 		_ucp.reset();
-	}
+
 }
 
 void MCP::createChildUCP(AgentLocation & uccLoc)

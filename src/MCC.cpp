@@ -3,6 +3,10 @@
 #include "Application.h"
 #include "ModuleAgentContainer.h"
 
+// ORDER
+//packetHead.packetType
+//packetHead.srcAgentId 
+//packetHead.dstAgentId 
 
 enum State
 {
@@ -12,8 +16,6 @@ enum State
 	
 	// TODO: Other states
 	ST_NEGOTIATING,
-	ST_WAITING,
-	ST_UNREGISTERING,
 	ST_FINISHED,
 
 };
@@ -51,14 +53,12 @@ void MCC::update()
 		break;
 
 		// TODO: Handle other states
-	case ST_IDLE:
-		break;
 	case ST_NEGOTIATING:
 		if (_ucc != nullptr && _ucc->negotiationfinished() == true) 
 		{
 			if (negotiationAgreement()) 
 			{
-				setState(ST_FINISHED);																	////// SISMISMEISIAIE
+				setState(ST_FINISHED);																
 			}
 			destroyChildUCC();
 		}
@@ -76,7 +76,7 @@ void MCC::stop()
 	destroyChildUCC();
 
 	unregisterFromYellowPages();
-	//setState(ST_FINISHED);
+	setState(ST_FINISHED);
 	
 	destroy();
 }
@@ -103,18 +103,18 @@ void MCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	case PacketType::RequestNegotiation:
 		if (state() == ST_IDLE)
 		{
-			AgentLocation uccLoc;
+			AgentLocation Loc;
 			createChildUCC();
-			uccLoc.agentId = _ucc->id();
-			uccLoc.hostIP = socket->RemoteAddress().GetIPString();
-			uccLoc.hostPort = LISTEN_PORT_AGENTS;
-			sendAcceptNegotiation(socket, packetHeader.srcAgentId, true, uccLoc);
+			Loc.agentId = _ucc->id();
+			Loc.hostIP = socket->RemoteAddress().GetIPString();
+			Loc.hostPort = LISTEN_PORT_AGENTS;
+			sendAcceptNegotiation(socket, packetHeader.srcAgentId, true, Loc);
 			setState(ST_NEGOTIATING);
 		}
 		else
 		{
-			AgentLocation uccLoc;
-			sendAcceptNegotiation(socket, packetHeader.srcAgentId, false, uccLoc);
+			AgentLocation Loc;
+			sendAcceptNegotiation(socket, packetHeader.srcAgentId, false, Loc);
 			wLog << "OnPacketReceived() - PacketType::RequestNegotiation was unexpected.";
 		}
 		break;
@@ -146,18 +146,17 @@ bool MCC::negotiationAgreement() const
 
 bool MCC::sendAcceptNegotiation(TCPSocketPtr socket, uint16_t dstID, bool accept, AgentLocation &uccLoc)
 {
-	PacketHeader packetHead;
-	packetHead.packetType = PacketType::ResponseNegotiation;
-	packetHead.srcAgentId = id();
-	packetHead.dstAgentId = dstID;
-
-	PacketResponseNegotiation packetBody;
-	packetBody.acceptNegotiation = accept;
-	packetBody.uccLoc = uccLoc;
+	PacketHeader packetHeader;
+	packetHeader.packetType = PacketType::ResponseNegotiation;
+	packetHeader.srcAgentId = id();
+	packetHeader.dstAgentId = dstID;
+	PacketResponseNegotiation packetResponse;
+	packetResponse.acceptNegotiation = accept;
+	packetResponse.uccLoc = uccLoc;
 
 	OutputMemoryStream stream;
-	packetHead.Write(stream);
-	packetBody.Write(stream);
+	packetHeader.Write(stream);
+	packetResponse.Write(stream);
 
 	socket->SendPacket(stream.GetBufferPtr(), stream.GetSize());
 
@@ -203,6 +202,7 @@ void MCC::unregisterFromYellowPages()
 void MCC::createChildUCC()
 {
 	// TODO: Create a unicast contributor
+
 	if (_ucc != nullptr)
 		destroyChildUCC();
 	_ucc = App->agentContainer->createUCC(node(), contributedItemId(), constraintItemId());
@@ -211,9 +211,11 @@ void MCC::createChildUCC()
 void MCC::destroyChildUCC()
 {
 	// TODO: Destroy the unicast contributor child
-	if (_ucc != nullptr)
-	{
+
+	if (_ucc == nullptr)
+		return;
+	
 		_ucc->stop();
 		_ucc.reset();
-	}
+	
 }
