@@ -28,6 +28,12 @@ UCP::~UCP()
 {
 }
 
+bool UCP::negotiationFinished()
+{
+	return state() == ST_NEGOTIATION_FINISHED;
+}
+
+
 void UCP::update()
 {
 	OutputMemoryStream stream;
@@ -56,17 +62,17 @@ void UCP::update()
 		setState(ST_ITEM_REQUESTED);
 		break;
 
-	case ST_ITEM_REQUESTED:
-		break;
-
 	case ST_FINISH_CONSTRAINT:
-		if (_mcp->negotiationFinished()) {
-			if (_mcp->negotiationAgreement()) {
+		if (_mcp->negotiationFinished()) 
+		{
+			if (_mcp->negotiationAgreement()) 
+			{
 				ConstraintResolve(true);
 				agreement = true;
 				
 			}
-			else {
+			else 
+			{
 				ConstraintResolve(false);
 				agreement = false;
 			}
@@ -74,13 +80,8 @@ void UCP::update()
 		}
 		break;
 
-	case ST_SEND_CONSTRAINT:
+	default:
 		break;
-
-	case ST_NEGOTIATION_FINISHED:
-		break;
-
-	default:;
 	}
 }
 
@@ -101,7 +102,8 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 	case PacketType::RequestConstraint:
 		PacketRequestConstraint packetbody;
 		packetbody.Read(stream);
-		if (packetbody._constraintItemId == this->contributedItemId) {
+		if (packetbody._constraintItemId == this->contributedItemId)
+		{
 			agreement = true;
 	
 			setState(ST_SEND_CONSTRAINT);
@@ -109,14 +111,16 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 			ConstraintResolve(true);
 		}
 		else {
-			if (searchDepth >= MAX_SEARCH_DEPTH) {
+			if (searchDepth >= MAX_SEARCH_DEPTH) 
+			{
 				agreement = false;
 
 				setState(ST_SEND_CONSTRAINT);
 
 				ConstraintResolve(true);
 			}
-			else {
+			else 
+			{
 				//we create a child mcp
 				if (_mcp != nullptr)
 					destroyChildMCP();
@@ -127,7 +131,8 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		break;
 
 	case PacketType::AckConstraint:
-		if (state() == ST_SEND_CONSTRAINT) {
+		if (state() == ST_SEND_CONSTRAINT) 
+		{
 			setState(ST_NEGOTIATION_FINISHED);
 		}
 		break;
@@ -139,7 +144,8 @@ void UCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 void UCP::destroyChildMCP()
 {
-	if (_mcp != nullptr) {
+	if (_mcp != nullptr) 
+	{
 		_mcp->stop();
 		_mcp.reset();
 	}

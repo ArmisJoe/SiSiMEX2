@@ -62,7 +62,8 @@ void UCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		{
 			PacketResultConstraint packetBody;
 			packetBody.Read(stream);
-			if (packetBody.accepted == true) {
+			if (packetBody.accepted == true) 
+			{
 				agreement = true;
 			}
 			else {

@@ -36,10 +36,12 @@ void MCC::update()
 	switch (state())
 	{
 	case ST_INIT:
-		if (registerIntoYellowPages()) {
+		if (registerIntoYellowPages()) 
+		{
 			setState(ST_REGISTERING);
 		}
-		else {
+		else 
+		{
 			setState(ST_FINISHED);
 		}
 		break;
@@ -52,16 +54,14 @@ void MCC::update()
 	case ST_IDLE:
 		break;
 	case ST_NEGOTIATING:
-		if (_ucc != nullptr && _ucc->negotiationfinished() == true) {
-			if (_ucc->negotiationagreement()) {
+		if (_ucc != nullptr && _ucc->negotiationfinished() == true) 
+		{
+			if (negotiationAgreement()) 
+			{
 				setState(ST_FINISHED);																	////// SISMISMEISIAIE
 			}
 			destroyChildUCC();
 		}
-		break;
-	case ST_WAITING:
-		break;
-	case ST_UNREGISTERING:
 		break;
 
 	case ST_FINISHED:
@@ -76,7 +76,7 @@ void MCC::stop()
 	destroyChildUCC();
 
 	unregisterFromYellowPages();
-	setState(ST_FINISHED);
+	//setState(ST_FINISHED);
 	
 	destroy();
 }
@@ -88,6 +88,18 @@ void MCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 	switch (packetType)
 	{
+	case PacketType::RegisterMCCAck:
+		if (state() == ST_REGISTERING)
+		{
+			setState(ST_IDLE);
+			socket->Disconnect();
+		}
+		else
+		{
+			wLog << "OnPacketReceived() - PacketType::RegisterMCCAck was unexpected.";
+		}
+		break;
+
 	case PacketType::RequestNegotiation:
 		if (state() == ST_IDLE)
 		{
@@ -106,17 +118,7 @@ void MCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 			wLog << "OnPacketReceived() - PacketType::RequestNegotiation was unexpected.";
 		}
 		break;
-	case PacketType::RegisterMCCAck:
-		if (state() == ST_REGISTERING)
-		{
-			setState(ST_IDLE);
-			socket->Disconnect();
-		}
-		else
-		{
-			wLog << "OnPacketReceived() - PacketType::RegisterMCCAck was unexpected.";
-		}
-		break;
+	
 
 	// TODO: Handle other packets
 
@@ -139,7 +141,7 @@ bool MCC::negotiationAgreement() const
 {
 	// If this agent finished, means that it was an agreement
 	// Otherwise, it would return to state ST_IDLE
-	return negotiationFinished();
+	return _ucc->negotiationagreement() == true;
 }
 
 bool MCC::sendAcceptNegotiation(TCPSocketPtr socket, uint16_t dstID, bool accept, AgentLocation &uccLoc)

@@ -14,6 +14,8 @@ public:
 	UCP(Node *node, uint16_t requestedItemId, uint16_t contributedItemId, const AgentLocation &uccLoc, unsigned int searchDepth);
 	~UCP();
 
+	bool negotiationFinished();
+
 	// Agent methods
 	void update() override;
 	void stop() override;

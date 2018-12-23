@@ -14,7 +14,7 @@ enum State
 	ST_WAITING_ACCEPTANCE,
 	ST_NEGOTIATING,
 	ST_WAIT_RESULT,
-	ST_NEGOTIATION_FINISHED
+	ST_FINISHED
 };
 
 MCP::MCP(Node *node, uint16_t requestedItemID, uint16_t contributedItemID, unsigned int searchDepth) :
@@ -39,27 +39,24 @@ void MCP::update()
 		setState(ST_REQUESTING_MCCs);
 		break;
 
-	case ST_REQUESTING_MCCs:
-		break;
-
 	case ST_ITERATING_OVER_MCCs:
 		// TODO: Handle this state
-		if (_mccRegisterIndex < _mccRegisters.size()) {
+		if (_mccRegisterIndex < _mccRegisters.size()) 
+		{
 			AskNegotiation(_mccRegisters[_mccRegisterIndex]);
 			setState(ST_WAITING_ACCEPTANCE);
 		}
-		else {
-			setState(ST_NEGOTIATION_FINISHED);
+		else 
+		{
+			setState(ST_FINISHED);
 			_mccRegisterIndex = 0;
 		}
 		break;
 
 	// TODO: Handle other states
-	case ST_WAITING_ACCEPTANCE:
-		break;
 
 	case ST_NEGOTIATING:
-		if (_ucp != nullptr && _ucp->state() == ST_NEGOTIATION_FINISHED) 
+		if (_ucp != nullptr && _ucp->negotiationFinished() == true) 
 		{
 			if (_ucp->agreement == false) 
 			{								 
@@ -67,17 +64,14 @@ void MCP::update()
 				_mccRegisterIndex++;
 		
 			}
-			else
+			else if (_ucp->agreement == true)
 			{
-				setState(ST_NEGOTIATION_FINISHED);
+				setState(ST_FINISHED);
 			}
 		}
 		break;
 
-	case ST_WAIT_RESULT:
-		break;
-
-	case ST_NEGOTIATION_FINISHED:
+	case ST_FINISHED:
 		destroyChildUCP();
 		break;
 	default:
@@ -134,11 +128,13 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		{
 			PacketResponseNegotiation packetBody;
 			packetBody.Read(stream);
-			if (packetBody.acceptNegotiation == true) {
+			if (packetBody.acceptNegotiation == true) 
+			{
 				createChildUCP(packetBody.uccLoc);
 				setState(ST_NEGOTIATING);
 			}
-			else {
+			else 
+			{
 				setState(ST_ITERATING_OVER_MCCs);
 				_mccRegisterIndex++;
 			}
@@ -151,17 +147,19 @@ void MCP::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 
 bool MCP::negotiationFinished() const
 {
-	return state() == ST_NEGOTIATION_FINISHED;
+	return state() == ST_FINISHED;
 }
 
 bool MCP::negotiationAgreement() const
 {
 	// TODO: Did the child UCP find a solution?
-	return false; 
-	if (_ucp != nullptr) {
+	//return false; 
+	if (_ucp != nullptr) 
+	{
 		return _ucp->agreement == true; 
 	}
-	else {
+	else 
+	{
 		return false;
 	}
 }
@@ -201,7 +199,8 @@ bool MCP::queryMCCsForItem(int itemId)
 
 void MCP::destroyChildUCP()
 {
-	if (_ucp != nullptr) {
+	if (_ucp != nullptr)
+	{
 		_ucp->stop();
 		_ucp.reset();
 	}
