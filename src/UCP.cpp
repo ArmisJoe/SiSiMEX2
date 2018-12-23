@@ -31,7 +31,9 @@ UCP::~UCP()
 void UCP::update()
 {
 	OutputMemoryStream stream;
+	PacketHeader packethead;
 
+	PacketRequestItem body;
 	switch (state())
 	{
 		// TODO: Handle states
@@ -39,12 +41,11 @@ void UCP::update()
 		agreement = -1;
 		// we will be requesting right away
 		// --------------------
-		PacketHeader packethead;
+	
 		packethead.packetType = PacketType::RequestItem;
 		packethead.dstAgentId = uccLocation.agentId;
 		packethead.srcAgentId = this->id();
 
-		PacketRequestItem body;
 		body._requestedItemId = this->requestedItemId;
 		
 		packethead.Write(stream);

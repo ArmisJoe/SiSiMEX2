@@ -81,6 +81,7 @@ void MCP::update()
 		destroyChildUCP();
 		break;
 	default:
+		break;
 	}
 }
 

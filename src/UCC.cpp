@@ -87,3 +87,13 @@ void UCC::OnPacketReceived(TCPSocketPtr socket, const PacketHeader &packetHeader
 		wLog << "UCC: OnPacketReceived() - Unexpected PacketType.";
 	}
 }
+
+bool UCC::negotiationfinished()
+{
+	return state() == ST_FINISH_NEGOTIATION;
+}
+
+bool UCC::negotiationagreement()
+{
+	return (state() == ST_FINISH_NEGOTIATION && agreement == true);
+}
